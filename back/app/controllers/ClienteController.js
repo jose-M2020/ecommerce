@@ -2,12 +2,13 @@
 
 const bcrypt = require('bcrypt');
 const Cliente = require('../models/Cliente');
+const jwt = require('../helpers/jwt');
 
 exports.registroCliente = async (req, res) => {
     let data = req.body;
-    const isEmailRegistered = await Cliente.findOne({email:data.email});
+    const user = await Cliente.findOne({email:data.email});
 
-    if(!isEmailRegistered){
+    if(!user){
         if(data.password){
             bcrypt.hash(data.password, 10, async (err,hash) => {
                 if(hash){
@@ -40,6 +41,46 @@ exports.registroCliente = async (req, res) => {
             data:undefined
         });
     }
+}
+
+exports.login = async (req, res) => {
+    const {body: {email, password}} = req;
+
+    const user = await Cliente.findOne({email});
+
+    if(user){
+        bcrypt.compare(password, user.password, async function(error,check){
+            if(check){
+                // if(data.carrito.length >= 1){
+                //     for(var item of data.carrito){
+                //         await Carrito.create({
+                //             cantidad:item.cantidad,
+                //             producto:item.producto._id,
+                //             variedad:item.variedad.id,
+                //             cliente:user._id
+                //         });
+                //     }
+                // }
+
+                res.status(200).send({
+                    data:user,
+                    token: jwt.createToken(user)
+                });
+            }else{
+                res.status(200).send({message: 'Los datos ingresados son incorrectos', data: undefined}); 
+            }
+        });
+    }else{
+        res.status(200).send({message: 'No existe una cuenta con el correo ingresado', data: undefined});
+    } 
+}
+
+exports.getItems = async (req, res) => {
+    const clientes = await Cliente.find();
+
+    res.status(200).send({
+        data: clientes
+    })
 }
 
 // module.exports = {
