@@ -2,44 +2,29 @@
 const bcrypt = require('bcrypt');
 const Admin = require('../models/Admin');
 const jwt = require('../helpers/jwt');
+const { validationResult } = require("express-validator");
 
-exports.registroAdmin = async (req, res) => {
-    let data = req.body;
-    const isEmailRegistered = await Admin.findOne({email:data.email});
+exports.registroAdmin = (req, res) => {
+    const data = req.body;
+    delete data.verified;
     
-    if(!isEmailRegistered){
-        if(data.password){
-            bcrypt.hash(data.password, 10, async (err,hash) => {
-                if(hash){
-                    data.dni = '';
-                    data.password = hash;
-                    const newClient = await Admin.create(data);
-                    
-                    res.status(200).send({
-                        message: 'Administrador registrado exitosamente',
-                        data: newClient
-                    });
-                }else{
-                    res.status(200).send({
-                        message:'Server error',
-                        data:undefined
-                    });
-                }
-            })
+    bcrypt.hash(data.password, 10, async (err,hash) => {
+        if(hash){
+            data.dni = '';
+            data.password = hash;
+            const newClient = await Admin.create(data);
+            
+            res.status(200).send({
+                message: 'Administrador registrado exitosamente',
+                data: newClient
+            });
         }else{
             res.status(200).send({
-                message:'No hay una contraseña',
+                message:'Server error',
                 data:undefined
             });
         }
-
-        
-    }else{
-        res.status(200).send({
-            message:'El correo ya ha sido registrado.',
-            data:undefined
-        });
-    }
+    })
 }
 
 exports.login = async (req, res) => {
@@ -62,4 +47,39 @@ exports.login = async (req, res) => {
     }else{
         res.status(200).send({message: 'No existe una cuenta con el correo ingresado', data: undefined});
     } 
+}
+
+exports.getItems = async (req, res) => {
+    const data = await Admin.find();
+
+    res.status(200).send({ data });
+}
+
+exports.getItem = async (req, res) => {
+    const id = req.params.id;
+    const data = await Admin.findById(id);
+    
+    res.status(200).send({ data });
+}
+
+exports.updateItem = async (req, res) => {
+    const id = req.params.id;
+
+    const data = await Admin.findByIdAndUpdate(id, req.body);
+
+    res.status(200).send({ message: 'Registro actualizado exitosamente', data });
+}
+
+exports.deleteItem = async (req, res) => {
+    const id = req.params.id;
+    const data = await Admin.findByIdAndDelete(id);
+    
+    if(data){
+        res.status(200).send({
+            message: 'Registro eliminado exitosamente',
+            data
+        })
+    }else{
+        res.status(200).send({ message: 'Registro no encontrado' })
+    }
 }

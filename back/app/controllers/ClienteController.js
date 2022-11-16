@@ -5,7 +5,9 @@ const Cliente = require('../models/Cliente');
 const jwt = require('../helpers/jwt');
 
 exports.registroCliente = async (req, res) => {
-    let data = req.body;
+    const data = req.body;
+    delete data.verified;
+    
     const user = await Cliente.findOne({email:data.email});
 
     if(!user){
@@ -76,13 +78,36 @@ exports.login = async (req, res) => {
 }
 
 exports.getItems = async (req, res) => {
-    const clientes = await Cliente.find();
+    const data = await Cliente.find();
 
-    res.status(200).send({
-        data: clientes
-    })
+    res.status(200).send({ data });
 }
 
-// module.exports = {
-//     registroCliente
-// }
+exports.getItem = async (req, res) => {
+    const id = req.params.id;
+    const data = await Cliente.findById(id);
+    
+    res.status(200).send({ data });
+}
+
+exports.updateItem = async (req, res) => {
+    const id = req.params.id;
+
+    const data = await Cliente.findByIdAndUpdate(id, req.body);
+
+    res.status(200).send({ message: 'Registro actualizado exitosamente', data });
+}
+
+exports.deleteItem = async (req, res) => {
+    const id = req.params.id;
+    const data = await Cliente.findByIdAndDelete(id);
+    
+    if(data){
+        res.status(200).send({
+            message: 'Registro eliminado exitosamente',
+            data
+        })
+    }else{
+        res.status(200).send({ message: 'Registro no encontrado' })
+    }
+}
